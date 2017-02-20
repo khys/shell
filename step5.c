@@ -17,7 +17,7 @@ void exec_proc(int, char *[]);
 
 int main(void)
 {
-	int ac, p_num;
+	int ac, p_num, pipe_num;
 	char *av[MAXWORD];
 	char c, lbuf[MAXLEN + 1], buf[MAXBUF];
 
@@ -34,8 +34,9 @@ int main(void)
 		}
 
 		split_cmd(lbuf, &ac, av, buf);
-		printf("Total Process = %d\n", count_pipe(ac, av) + 1);		
-		for (p_num = 0; p_num < count_pipe(ac, av) + 1; p_num++) {
+		pipe_num = count_pipe(ac, av) + 1;
+		printf("Total Process = %d\n", pipe_num);		
+		for (p_num = 0; p_num < pipe_num; p_num++) {
 			split_proc(&ac, av, p_num);
 		}
 		// print_args(ac, av);
@@ -81,19 +82,21 @@ void split_proc(int *ac, char *av[], int p_num)
 			p_ac_init = p_ac;
 		}
 		while (p_ac < *ac) {
-			if (strcmp(av[p_ac], "|") == 0) {
-				// av[p_ac] = NULL;
+			if (av[p_ac] == NULL) {
+				p_ac++;
+				break;
+			} else if (strcmp(av[p_ac], "|") == 0) {
+				av[p_ac] = NULL;
 				p_ac++;
 				break;
 			}
 			p_ac++;
 		}
 	}
-	//if (strcmp(av[p_ac - 1], "|") == 0) {
 	if (av[p_ac - 1] == NULL) {
 		p_ac--;
 	} else {
-		// av[p_ac] = NULL;
+		av[p_ac] = NULL;
 	}
 	printf("Proc %d\n", p_num + 1);
 	printf("Pac = %d\n", p_ac - p_ac_init);
