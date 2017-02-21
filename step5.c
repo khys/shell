@@ -7,19 +7,21 @@
 #define MAXLEN  256
 #define MAXBUF  1024
 #define MAXWORD 80
+#define MAXCMD  20
 
 void split_cmd(char *, int *, char *[], char *);
-void split_proc(int *, char *[], int);
+char **split_proc(int *, char *[], int);
 void print_arg(char *);
 void print_args(int, char *[]);
 int count_pipe(int, char *[]);
-void exec_proc(int, char *[]);
+void exec_proc(int, char **);
 
 int main(void)
 {
 	int ac, p_num, pipe_num;
 	char *av[MAXWORD];
 	char c, lbuf[MAXLEN + 1], buf[MAXBUF];
+	char **cmd_list[MAXCMD];
 
 	for (;;) {
 		ac = 0;
@@ -37,7 +39,8 @@ int main(void)
 		pipe_num = count_pipe(ac, av) + 1;
 		printf("Total Process = %d\n", pipe_num);		
 		for (p_num = 0; p_num < pipe_num; p_num++) {
-			split_proc(&ac, av, p_num);
+			cmd_list[p_num] = split_proc(&ac, av, p_num);
+			exec_proc(0, cmd_list[p_num]);
 		}
 		// print_args(ac, av);
 	}
@@ -65,7 +68,7 @@ void split_cmd(char *cmd, int *ac, char *av[], char *buf)
 			(*ac)++;
 			buf[j++] = cmd[i++];
 			while (!isblank(cmd[i]) && cmd[i] != '|' && cmd[i] != '<'
-				   && cmd[i] != '>' && cmd[i] != '&') {
+				   && cmd[i] != '>' && cmd[i] != '&' && cmd[i] != '\n') {
 				buf[j++] = cmd[i++];
 			}
 			buf[j++] = '\0';
@@ -73,7 +76,7 @@ void split_cmd(char *cmd, int *ac, char *av[], char *buf)
 	}
 }
 
-void split_proc(int *ac, char *av[], int p_num)
+char **split_proc(int *ac, char *av[], int p_num)
 {
 	int i, j, p_ac_init, p_ac = 0;
 	
@@ -104,6 +107,8 @@ void split_proc(int *ac, char *av[], int p_num)
 		printf("Pav[%d] = %s\n", i - p_ac_init, av[i]);
    	}
 	putchar('\n');
+
+	return &av[p_ac_init];
 }
 
 void print_args(int ac, char *av[])
@@ -128,7 +133,7 @@ int count_pipe(int ac, char *av[])
 	return cnt;
 }
 
-void exec_proc(int ac, char *av[])
+void exec_proc(int ac, char **av)
 {
 	int stat;
 	pid_t pid, res;
