@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define MAXLEN  256
 #define MAXBUF  1024
@@ -29,7 +30,7 @@ int main(void)
 		memset(buf, 0, sizeof buf);
 		fprintf(stdout, "mysh$ ");
 		fgets(lbuf, MAXLEN + 1, stdin);
-		
+
 		if (strchr(lbuf, '\n') == NULL) {
 			fprintf(stderr, "Error!\n");
 			while ((c = getchar()) != '\n') {}
@@ -37,16 +38,31 @@ int main(void)
 		split_cmd(lbuf, &ac, av, buf);
 		if (strcmp(av[0], "exit") == 0) {
 			return 0;
+		} else if (strcmp(av[0], "cd") == 0) {
+			if (ac == 1) {
+				chdir(getenv("HOME"));
+			} else {
+				if (chdir(av[1]) != 0) {
+					if (errno == ENOENT) {
+						fprintf(stderr,
+								"cd: %s: No such file or directory\n",
+								av[1]);
+					} else {
+						fprintf(stderr, "cd: Undefined error\n");
+					}
+				}
+			}
+			continue;
 		}
 		pipe_num = count_pipe(ac, av) + 1;
-		printf("Total Process = %d\n", pipe_num);		
+		printf("Total Process = %d\n", pipe_num);
 		for (p_num = 0; p_num < pipe_num; p_num++) {
 			cmd_list[p_num] = split_proc(&ac, av, p_num);
 			exec_proc(cmd_list[p_num]);
 		}
 		// print_args(ac, av);
 	}
-	
+
 	return 0;
 }
 
@@ -81,7 +97,7 @@ void split_cmd(char *cmd, int *ac, char *av[], char *buf)
 char **split_proc(int *ac, char *av[], int p_num)
 {
 	int i, j, p_ac_init, p_ac = 0;
-	
+
 	for (j = 0; j < p_num + 1; j++) {
 		if (j == p_num) {
 			p_ac_init = p_ac;
@@ -107,7 +123,7 @@ char **split_proc(int *ac, char *av[], int p_num)
 	printf("Pac = %d\n", p_ac - p_ac_init);
 	for (i = p_ac_init; i < p_ac; i++) {
 		printf("Pav[%d] = %s\n", i - p_ac_init, av[i]);
-   	}
+	}
 	putchar('\n');
 
 	return &av[p_ac_init];
@@ -140,7 +156,7 @@ void exec_proc(char **av)
 	int stat;
 	pid_t pid, res;
 
-	pid = fork();	
+	pid = fork();
 	if (pid < 0) {
 		perror("fork");
 		exit(1);
