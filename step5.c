@@ -14,7 +14,7 @@ char **split_proc(int *, char *[], int);
 void print_arg(char *);
 void print_args(int, char *[]);
 int count_pipe(int, char *[]);
-void exec_proc(int, char **);
+void exec_proc(char **);
 
 int main(void)
 {
@@ -34,13 +34,15 @@ int main(void)
 			fprintf(stderr, "Error!\n");
 			while ((c = getchar()) != '\n') {}
 		}
-
 		split_cmd(lbuf, &ac, av, buf);
+		if (strcmp(av[0], "exit") == 0) {
+			return 0;
+		}
 		pipe_num = count_pipe(ac, av) + 1;
 		printf("Total Process = %d\n", pipe_num);		
 		for (p_num = 0; p_num < pipe_num; p_num++) {
 			cmd_list[p_num] = split_proc(&ac, av, p_num);
-			exec_proc(0, cmd_list[p_num]);
+			exec_proc(cmd_list[p_num]);
 		}
 		// print_args(ac, av);
 	}
@@ -133,7 +135,7 @@ int count_pipe(int ac, char *av[])
 	return cnt;
 }
 
-void exec_proc(int ac, char **av)
+void exec_proc(char **av)
 {
 	int stat;
 	pid_t pid, res;
