@@ -32,6 +32,7 @@ int main(void)
 		ac = 0;
 		memset(lbuf, '\0' , sizeof lbuf);
 		memset(buf, 0, sizeof buf);
+		// memset(av, 0, sizeof av);
 		// memset(def_in, 0, sizeof def_in);
 		// memset(def_out, 0, sizeof def_out);
 		fprintf(stdout, "mysh$ ");
@@ -106,16 +107,21 @@ void split_cmd(char *cmd, int *ac, char *av[], char *buf)
 char **split_proc(int *ac, char *av[],
 				  int p_num, char **def_in, char **def_out)
 {
-	int i, j, p_ac_init, p_ac = 0;
+	int i, j, p_ac_init = 0, p_ac = 0;
 
-	def_in = def_out = NULL;
+	*def_in = *def_out = NULL;
 
 	for (j = 0; j < p_num + 1; j++) {
 		if (j == p_num) {
-			p_ac_init = p_ac;
+			if (!strcmp(av[p_ac], "<") || !strcmp(av[p_ac], ">")) {
+				p_ac_init = p_ac + 2;
+			} else {
+				p_ac_init = p_ac;
+			}
 		}
 		while (p_ac < *ac) {
-			if (av[p_ac++] == NULL) {
+			if (av[p_ac] == NULL) {
+				p_ac++;
 				break;
 			} else if (strcmp(av[p_ac], "|") == 0) {
 				av[p_ac++] = NULL;
@@ -128,8 +134,9 @@ char **split_proc(int *ac, char *av[],
 				av[p_ac++] = NULL;
 				*def_out = av[p_ac++];
 				break;
+			} else {
+				p_ac++;
 			}
-			p_ac++;
 		}
 	}
 	if (av[p_ac - 1] == NULL) {
@@ -210,3 +217,5 @@ void exec_proc(char **av, char *def_in, char *def_out)
 // int -> uint8_t
 
 // < file 
+
+// makefile is needed
