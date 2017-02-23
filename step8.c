@@ -20,6 +20,8 @@ void print_args(int, char *[]);
 int count_pipe(int, char *[]);
 void exec_proc(char **, char *, char *);
 
+int p_ac_init = 0, p_ac = 0;
+
 int main(void)
 {
 	int ac, p_num, pipe_num;
@@ -30,11 +32,9 @@ int main(void)
 
 	for (;;) {
 		ac = 0;
+	    p_ac_init = 0, p_ac = 0;
 		memset(lbuf, '\0' , sizeof lbuf);
 		memset(buf, 0, sizeof buf);
-		// memset(av, 0, sizeof av);
-		// memset(def_in, 0, sizeof def_in);
-		// memset(def_out, 0, sizeof def_out);
 		fprintf(stdout, "mysh$ ");
 		fgets(lbuf, MAXLEN + 1, stdin);
 
@@ -70,7 +70,6 @@ int main(void)
 										 &def_in[p_num], &def_out[p_num]);
 			exec_proc(cmd_list[p_num], def_in[p_num], def_out[p_num]);
 		}
-		// print_args(ac, av);
 	}
 	
 	return 0;
@@ -107,50 +106,57 @@ void split_cmd(char *cmd, int *ac, char *av[], char *buf)
 char **split_proc(int *ac, char *av[],
 				  int p_num, char **def_in, char **def_out)
 {
-	int i, j, p_ac_init = 0, p_ac = 0;
+	int i;
+	char **tmp;
+	// static int p_ac_init = 0, p_ac = 0;
 
 	*def_in = *def_out = NULL;
 
-	for (j = 0; j < p_num + 1; j++) {
-		if (j == p_num) {
-			if (!strcmp(av[p_ac], "<") || !strcmp(av[p_ac], ">")) {
-				p_ac_init = p_ac + 2;
-			} else {
-				p_ac_init = p_ac;
-			}
+	/*
+	while (p_ac < *ac) {
+		if (av[p_ac] == NULL) {
+			return &av[p_ac_init];
+		} else if (strcmp(av[p_ac], "|") == 0) {
+			av[p_ac] = NULL;
+			p_ac_init++;
+			p_ac++;
+			break;
 		}
-		while (p_ac < *ac) {
-			if (av[p_ac] == NULL) {
-				p_ac++;
-				break;
-			} else if (strcmp(av[p_ac], "|") == 0) {
-				av[p_ac++] = NULL;
-				break;
-			} else if (strcmp(av[p_ac], "<") == 0) {
-				av[p_ac++] = NULL;
-				*def_in = av[p_ac++];
-				break;
-			} else if (strcmp(av[p_ac], ">") == 0) {
-				av[p_ac++] = NULL;
-				*def_out = av[p_ac++];
-				break;
-			} else {
-				p_ac++;
-			}
-		}
+		p_ac++;
 	}
-	if (av[p_ac - 1] == NULL) {
-		p_ac--;
-	} else {
-		av[p_ac] = NULL;
+	*/
+	while (p_ac < *ac) {
+		if (av[p_ac] == NULL) {
+			return &av[p_ac_init];
+		} else if (strcmp(av[p_ac], "|") == 0) {
+			av[p_ac] = NULL;
+			p_ac++;
+			tmp = &av[p_ac_init];
+			p_ac_init = ++p_ac;
+			return tmp;			
+		} else if (strcmp(av[p_ac], "<") == 0) {
+			av[p_ac] = NULL;
+			p_ac++;
+			*def_in = av[p_ac];
+			p_ac++;
+			continue;
+		} else if (strcmp(av[p_ac], ">") == 0) {
+			av[p_ac] = NULL;
+			p_ac++;
+			*def_out = av[p_ac];
+			p_ac++;
+			continue;
+		} else {
+			p_ac++;
+		}
 	}
 	printf("Proc %d\n", p_num + 1);
 	printf("Pac = %d\n", p_ac - p_ac_init);
 	for (i = p_ac_init; i < p_ac; i++) {
 		printf("Pav[%d] = %s\n", i - p_ac_init, av[i]);
 	}
-	putchar('\n');
-
+	// putchar('\n');
+	
 	return &av[p_ac_init];
 }
 
