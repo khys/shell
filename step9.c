@@ -203,10 +203,8 @@ void exec_proc(char **av, int p_num, struct io_list *io)
     pid_t pid, res;
 
     if (io[p_num + 1].ispipe != 0) {
-        pipe(io[p_num].pipe_fdp);
-    } /* else if (io[p_num].ispipe != 0) { */
-    /*     pipe(io[p_num - 1].pipe_fdp); */
-    /* } */
+        pipe(io[p_num + 1].pipe_fdp);
+    }
     pid = fork();
     if (pid < 0) {
         perror("fork");
@@ -248,12 +246,9 @@ void exec_proc(char **av, int p_num, struct io_list *io)
         execvp(*av, av);
         exit(1);
     }
-    /* if (io[p_num + 1].ispipe != 0) { */
-    /*     close(io[p_num].pipe_fdp[0]); */
-    /*     close(io[p_num].pipe_fdp[1]); */
-    /* } else */ if (io[p_num].ispipe != 0) {
-        close(io[p_num - 1].pipe_fdp[0]);
-        close(io[p_num - 1].pipe_fdp[1]);
+    if (io[p_num].ispipe != 0) {
+        close(io[p_num].pipe_fdp[0]);
+        close(io[p_num].pipe_fdp[1]);
     }
     res = wait(&stat);
     return;
