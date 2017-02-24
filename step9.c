@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #define MAXLEN  256
 #define MAXBUF  1024
@@ -38,7 +39,13 @@ int main(void)
     char c, lbuf[MAXLEN + 1], buf[MAXBUF];
     char **cmd_list[MAXCMD];
     struct io_list io[MAXCMD];
-
+    // struct sigaction sa;
+    sigset_t unblock_mask, block_mask;
+    
+    sigemptyset(&block_mask);
+    sigaddset(&block_mask, SIGINT);
+    sigprocmask(SIG_SETMASK, &block_mask, &unblock_mask);
+    
     for (;;) {
         ac = 0;
         p_ac_init = 0;
