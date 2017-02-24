@@ -30,6 +30,8 @@ int count_pipe(int, char *[]);
 void exec_proc(char **, int, struct io_list *);
 int built_in(int, char *[]);
 
+// static void handler(int sig) {}
+
 int p_ac_init = 0, p_ac = 0;
 
 int main(void)
@@ -56,7 +58,7 @@ int main(void)
         memset(buf, 0, sizeof buf);
         memset(io, 0, sizeof io);
 
-        fprintf(stdout, "mysh$ ");
+        fprintf(stdout, "\nmysh$ ");
         fgets(lbuf, MAXLEN + 1, stdin);
 
         if (strchr(lbuf, '\n') == NULL) {
@@ -78,7 +80,7 @@ int main(void)
         printf("Total Process = %d\n", pipe_num);
         for (p_num = 0; p_num < pipe_num; p_num++) {
             printf("Proc %d\n", p_num + 1);
-            cmd_list[p_num] = split_proc(&ac, av, p_num, io);
+            cmd_list[p_num] = split_proc(&ac, av, p_num, io);            
             exec_proc(cmd_list[p_num], p_num, io);
         }
     }
@@ -209,6 +211,10 @@ void exec_proc(char **av, int p_num, struct io_list *io)
     int stat, fd;
     pid_t pid, res;
 
+    sigset_t block_mask;
+    sigemptyset(&block_mask);
+    sigaddset(&block_mask, SIGINT);
+
     if (io[p_num + 1].ispipe != 0) {
         pipe(io[p_num + 1].pipe_fdp);
     }
@@ -250,6 +256,7 @@ void exec_proc(char **av, int p_num, struct io_list *io)
             close(io[p_num].pipe_fdp[1]);
         }
         printf("%s", *av);
+        sigprocmask(SIG_UNBLOCK, &block_mask, NULL);
         execvp(*av, av);
         exit(1);
     }
