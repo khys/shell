@@ -29,10 +29,10 @@ void print_args(int, char *[]);
 int count_pipe(int, char *[]);
 void exec_proc(char **, int, struct io_list *);
 int built_in(int, char *[]);
-
-// static void handler(int sig) {}
+void handler(int);
 
 int p_ac_init = 0, p_ac = 0;
+int isbg = 0;
 
 int main(void)
 {
@@ -41,8 +41,13 @@ int main(void)
     char c, lbuf[MAXLEN + 1], buf[MAXBUF];
     char **cmd_list[MAXCMD];
     struct io_list io[MAXCMD];
-    // struct sigaction sa;
+    
+    struct sigaction sa;
     sigset_t unblock_mask, block_mask;
+
+    sa.sa_handler = handler;
+    sa.sa_flags = SA_RESTART;
+    sigaction(SIGCHLD, &sa, 0);
     
     sigemptyset(&block_mask);
     sigaddset(&block_mask, SIGINT);
@@ -52,6 +57,7 @@ int main(void)
         ac = 0;
         p_ac_init = 0;
         p_ac = 0;
+        isbg = 0;
 
         memset(av, 0, sizeof av);
         memset(lbuf, '\0' , sizeof lbuf);
@@ -77,10 +83,10 @@ int main(void)
             break;
         }
         pipe_num = count_pipe(ac, av) + 1;
-        printf("Total Process = %d\n", pipe_num);
+        // printf("Total Process = %d\n", pipe_num);
         for (p_num = 0; p_num < pipe_num; p_num++) {
-            printf("Proc %d\n", p_num + 1);
-            cmd_list[p_num] = split_proc(&ac, av, p_num, io);            
+            // printf("Proc %d\n", p_num + 1);
+            cmd_list[p_num] = split_proc(&ac, av, p_num, io);
             exec_proc(cmd_list[p_num], p_num, io);
         }
     }
@@ -149,16 +155,21 @@ char **split_proc(int *ac, char *av[], int p_num, struct io_list *io)
             io[p_num].def_out = av[p_ac];
             p_ac++;
             continue;
+        } else if (strcmp(av[p_ac], "&") == 0) {
+            isbg = 1;
+            av[p_ac] = NULL;
+            p_ac++;
         } else {
             p_ac++;
         }
     }
-    // printf("Pac = %d\n", p_ac - p_ac_init);
-    // for (i = p_ac_init; i < p_ac; i++) {
-    //    printf("Pav[%d] = %s\n", i - p_ac_init, av[i]);
-    //}
-    //putchar('\n');
-
+    /*
+      printf("Pac = %d\n", p_ac - p_ac_init);
+      for (i = p_ac_init; i < p_ac; i++) {
+      printf("Pav[%d] = %s\n", i - p_ac_init, av[i]);
+      }
+      putchar('\n');
+    */
     return cmd_init;
 }
 
@@ -264,8 +275,18 @@ void exec_proc(char **av, int p_num, struct io_list *io)
         close(io[p_num].pipe_fdp[0]);
         close(io[p_num].pipe_fdp[1]);
     }
-    res = wait(&stat);
+    if (isbg == 0) {
+        res = wait(&stat);
+    }
     return;
+}
+
+void handler(int no) {
+    int stat;
+    pid_t res;
+    
+    res = wait(&stat);
+    killpg(0, SIGINT);
 }
 
 // int -> uint8_t
