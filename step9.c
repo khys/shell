@@ -196,15 +196,19 @@ int count_pipe(int ac, char *av[])
 
 int built_in(int ac, char *av[])
 {
+    char dirname[MAXLEN];
+
     if (av[0] == NULL) {
         return 0;
     } else if (strcmp(av[0], "exit") == 0) {
         return -1;
     } else if (strcmp(av[0], "cd") == 0) {
         if (ac == 1) {
-            strcmp(av[1], getenv("HOME"));
+            strcpy(dirname, getenv("HOME"));
+        } else {
+            strcpy(dirname, av[1]);
         }
-        if (chdir(av[1]) != 0) {
+        if (chdir(dirname) != 0) {
             if (errno == ENOENT) {
                 fprintf(stderr,
                         "cd: %s: No such file or directory\n", av[1]);
